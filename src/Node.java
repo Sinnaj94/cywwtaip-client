@@ -63,5 +63,6 @@ public class Node {
             sum += Math.pow(position[i] - otherPos[i], 2);
         }
         return Math.sqrt(sum);
+        //return 1;
     }
 }

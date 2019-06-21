@@ -10,7 +10,7 @@ public class Main {
         // Die kugelförmige Spielwelt wird von Gräben durchzogen, die normalerweise die Bewegung begrenzen.
         Map<Integer, Node> converted = convertGraph(client.getGraph());
         // Create the bots
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < 3; i++) {
             Bot c = new Bot(client, i, converted);
             new Thread(c).start();
         }
