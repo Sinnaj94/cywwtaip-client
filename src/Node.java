@@ -1,4 +1,5 @@
 import lenz.htw.cywwtaip.world.GraphNode;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +7,7 @@ import java.util.List;
 public class Node {
     int id;
     private List<Node> neighbours;
-    private float[] position;
+    private Vector3D position;
     private double distance;
 
     public void setPrevious(Node previous) {
@@ -15,13 +16,13 @@ public class Node {
 
     private Node previous;
 
-    public Node(float[] pos, int id) {
+    public Node(Vector3D pos, int id) {
         neighbours = new ArrayList<>();
         position = pos;
         this.id = id;
     }
 
-    public float[] getPosition() {
+    public Vector3D getPosition() {
         return position;
     }
 
@@ -51,18 +52,10 @@ public class Node {
 
     @Override
     public String toString() {
-        return String.format("Node with ID %s at Position %f, %f, %f has %d neighbours.", id, position[0], position[1], position[2], neighbours.size());
+        return position.toString();
     }
 
     public double distanceTo(Node other) {
-        // TODO: improve (should fit a sphere)
-        float[] otherPos = other.getPosition();
-        double sum = 0;
-        // euclidian distance
-        for(int i = 0; i < position.length; i++) {
-            sum += Math.pow(position[i] - otherPos[i], 2);
-        }
-        return Math.sqrt(sum);
-        //return 1;
+        return position.distance(other.getPosition());
     }
 }

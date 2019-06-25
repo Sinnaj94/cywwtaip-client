@@ -2,19 +2,25 @@ import com.sun.corba.se.impl.orbutil.graph.Graph;
 import lenz.htw.cywwtaip.world.GraphNode;
 
 import java.util.*;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Stream;
 
 public class Dijkstra {
     private Node start;
     private Map<Integer, Node> graph;
     // Temporary
-    private List<Node> q;
+    private PriorityQueue<Node> q;
 
 
-    public Dijkstra(Map<Integer, Node> graph, Node start) {
-        this.start = start;
+    // New Dijkstra algorithm
+    public Dijkstra(Map<Integer, Node> graph, int start) {
+        this.start = graph.get(start);
         this.graph = graph;
         dijkstra();
+    }
+
+    public Map<Integer, Node> getResult() {
+        return graph;
     }
 
 
@@ -22,21 +28,18 @@ public class Dijkstra {
         initialize();
         // iterate through g until it is empty
         Node u;
+        double mil = System.currentTimeMillis();
         while(!q.isEmpty()) {
-            u = smallestNode();
+
+            u = q.poll();
             q.remove(u);
-            System.out.println(q.size());
             // Iterate through neighbours
             for(Node neighbour:u.getNeighbours()) {
-                if(q.contains(neighbour)) {
-                    distanceUpdate(u, neighbour);
-                }
+                distanceUpdate(u, neighbour);
             }
         }
-        System.out.println("Distance update ready");
-        for(Node n:graph.values()) {
-            System.out.println(n.getDistance());
-        }
+        System.out.println();
+        System.out.println(String.format("Distance update ready (%sms)", System.currentTimeMillis() - mil));
     }
 
     private void distanceUpdate(Node u, Node v) {
@@ -47,26 +50,18 @@ public class Dijkstra {
         }
     }
 
-    // Returns smallest Node or null if there is no node
-    private Node smallestNode() {
-        return q.stream().min(Comparator.comparing(Node::getDistance)).orElse(null);
-    }
-
     private void initialize() {
         System.out.println("Initializing dijkstra");
         // Go through the whole graph and set the distances
+        q = new PriorityQueue<>(Comparator.comparing(Node::getDistance));
         for(Node n:graph.values()) {
-            if(n == start) {
-                // The start node should be 0
-                n.setDistance(0);
-            } else {
-                // All other nodes should be infinity
-                n.setDistance(Double.POSITIVE_INFINITY);
-            }
+            // All node distances should be infinite
+            n.setDistance(Double.POSITIVE_INFINITY);
             n.setPrevious(null);
+            q.add(n);
         }
-        // build a temporary list
-        q = new ArrayList<>(graph.values());
-        System.out.println("Initialization ready");
+        // Start distance should be zero
+        start.setDistance(0);
+        System.out.println("Initialization ready.");
     }
 }

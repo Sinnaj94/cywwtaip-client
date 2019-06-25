@@ -1,17 +1,21 @@
 import lenz.htw.cywwtaip.net.NetworkClient;
 import lenz.htw.cywwtaip.world.GraphNode;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.*;
 
 public class Main {
+    public final static  Object sync = new Object();
     public static void main(String[] args) {
         NetworkClient client = new NetworkClient(null, "Davidoff", "Davidoff cool water!");
         // Ziel des Spiels ist es, möglichst große Bereiche der Spielwelt durch "Überfahren" mit eigenen Bots mit der eigenen Farbe zu färben.
         // Die kugelförmige Spielwelt wird von Gräben durchzogen, die normalerweise die Bewegung begrenzen.
-        Map<Integer, Node> converted = convertGraph(client.getGraph());
         // Create the bots
+        Map<Integer, Node> converted = convertGraph(client.getGraph());
+        Dijkstra dijkstra = new Dijkstra(converted, (int)converted.keySet().toArray()[0]);
         for(int i = 0; i < 3; i++) {
-            Bot c = new Bot(client, i, converted);
+            // Building three different converted maps
+            Bot c = new Bot(client, i, new HashMap<>(converted));
             new Thread(c).start();
         }
         /*
@@ -37,7 +41,7 @@ public class Main {
         // Build List
         for(int i = 0; i < nodes.length; i++) {
             GraphNode n = nodes[i];
-            float[] pos = new float[]{n.x, n.y, n.z};
+            Vector3D pos = new Vector3D(n.x, n.y, n.z);
             Node added = new Node(pos, n.hashCode());
             nodeList.put(n.hashCode(), added);
         }
@@ -52,8 +56,6 @@ public class Main {
         }
         long dt = System.currentTimeMillis() - t;
         System.out.println(String.format("Conversion took %d milliseconds.", dt));
-        System.out.println(nodeList.values().toArray()[0].toString());
         return nodeList;
-
     }
 }

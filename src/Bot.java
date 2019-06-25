@@ -1,7 +1,6 @@
 import lenz.htw.cywwtaip.net.NetworkClient;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-
 import java.util.Map;
 
 public class Bot implements Runnable {
@@ -17,7 +16,6 @@ public class Bot implements Runnable {
         this.botID = botID;
         this.client = client;
         this.playerID = client.getMyPlayerNumber();
-        //dijkstra = new Dijkstra(map, map.get(posToHash()));
         running = true;
     }
 
@@ -28,7 +26,7 @@ public class Bot implements Runnable {
 
     private void think() {
         //System.out.println("thinking...");
-        // TODO
+        // TODO: Dijkstra anbindung
         // chasing point
         float dir = navigateTo(goal);
         if(!Float.isNaN(dir)) {
@@ -41,12 +39,11 @@ public class Bot implements Runnable {
     }
 
     private Vector3D getPosition() {
-        return convert(client.getBotPosition(botID, playerID));
+        return convert(client.getBotPosition(playerID, botID));
     }
 
-    private Vector3D  getDirection() {
-        float[] dir = client.getBotDirection(botID);
-        return new Vector3D(dir[0], dir[1], dir[2]);
+    private Vector3D getDirection() {
+        return convert(client.getBotDirection(botID));
     }
 
     private float navigateTo(Vector3D goal) {
@@ -60,29 +57,36 @@ public class Bot implements Runnable {
         Vector3D b = goal.subtract(curPos.scalarMultiply(Vector3D.dotProduct(curPos, goal)));
         //Vector3D b = z.subtract(goal_dot);
         //Vector3D b = getPosition().subtract(goal);
-        return (float)angleBetween(a, b);
+        return angleBetween(a, b);
+        //return getAngleOnSphere(curPos, curDir, goal);
     }
 
-    private double angleBetween(Vector3D a, Vector3D b) {
-        return FastMath.acos(Vector3D.dotProduct(a, b) / (a.getNorm() * b.getNorm()));
+    private float angleBetween(Vector3D a, Vector3D b) {
+        double length = (a.getNorm() * b.getNorm());
+        return (float)FastMath.acos(Vector3D.dotProduct(a, b) / (length));
     }
+
 
     private int posToHash() {
-        Vector3D pos = getPosition();
-        return (int)(((float)((int)(((float)((int)(pos.getX() * 1260.0F)) + pos.getY()) * 1260.0F)) + pos.getZ()) * 1260.0F);
+        //Vector3D pos = getPosition();
+        float[] p = client.getBotPosition(playerID, botID);
+        return (int)(((float)((int)(((float)((int)(p[0] * 1260.0F)) + p[1]) * 1260.0F)) + p[2]) * 1260.0F);
     }
 
     @Override
     public void run() {
         try {
             while(true) {
-                think();
-                Thread.sleep(100);
-                // Stop, if not running anymore
+                synchronized (Main.sync) {
+                    think();
+                    Thread.sleep(10);
+                    // Stop, if not running anymore
 
-                if(!client.isAlive()) {
-                    Thread.sleep(1000);
+                    if(!client.isAlive()) {
+                        Thread.sleep(1000);
+                    }
                 }
+
             }
 
         } catch (InterruptedException e) {
