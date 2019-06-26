@@ -12,11 +12,16 @@ public class Bot implements Runnable {
     private float angle;
     private final Vector3D goal = new Vector3D(1, 0 , 0);
 
-    public Bot(NetworkClient client, int botID, Map<Integer, Node> map) {
+    public Bot(NetworkClient client, int botID) {
         this.botID = botID;
         this.client = client;
         this.playerID = client.getMyPlayerNumber();
         running = true;
+        // Implementing dijkstra
+        //Dijkstra dijkstra = new Dijkstra(map, posToHash(), botID);
+        // TODO: fix
+        AStarGraph astar = new AStarGraph(client.getGraph(), 0, 40900);
+
     }
 
     private boolean collectsEnergy() {

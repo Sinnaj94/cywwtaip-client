@@ -13,14 +13,28 @@ public class AStar {
     }
 
 
-    public void aStar() {
+    public boolean aStar() {
         closed = new HashSet<>();
         open = new PriorityQueue<Node>(Comparator.comparing(Node::getDistance));
 
         // Put only start node in open
-        open.offer(start);
+        open.add(start);
 
+        while(!open.isEmpty()) {
+            Node current = open.poll();
+            if(current == goal) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-
+    private void expandNode(Node found) {
+        // Go through each neighbour
+        for(Node neighbour:found.getNeighbours()) {
+            if(closed.contains(neighbour)) {
+                return;
+            }
+        }
     }
 }
