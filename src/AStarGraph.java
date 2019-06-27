@@ -1,29 +1,86 @@
 import lenz.htw.cywwtaip.world.GraphNode;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class AStarGraph {
     private PriorityQueue<Integer> open;
     private Set<Integer> closed;
-    private HashMap<GraphNode, Integer> graphNodeIntegerHashMap;
+    private HashMap<Integer, Integer> graphNodeIntegerHashMap;
+
+    private Map<GraphNode, GraphNode> cameFrom;
+
+    private boolean finished;
 
     private double[] gScore;
     private double[] fScore;
     private double[] hScore;
 
-    private GraphNode[] previous;
+    private LinkedList<GraphNode> route;
+
+    private Queue<GraphNode> way;
 
     private GraphNode[] nodes;
     private int start;
     private int goal;
 
+    private int botID;
 
-    public AStarGraph(GraphNode[] nodes, int start, int goal) {
+    public GraphNode getNext() {
+        return route.pollLast();
+    }
+
+    public int routeLength() {
+        return route.size();
+    }
+
+
+
+    private int nearestNode(float[] pos, GraphNode[] nodes) {
+        double score = Double.POSITIVE_INFINITY;
+        int near = -1;
+        for(int i = 0; i < nodes.length; i++) {
+            double dist = distanceFloatGraph(pos, nodes[i]);
+            if(dist < score) {
+                System.out.println(dist);
+                score = dist;
+                near = i;
+            }
+        }
+        System.out.println("nearest node is " + near + " with distance " + score);
+        return near;
+    }
+
+    private double distanceFloatGraph(float[] a, GraphNode b) {
+        return FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
+    }
+
+    public AStarGraph(GraphNode[] nodes, float[] start, int goal, int botID) {
+        int nearest = nearestNode(start, nodes);
+        aStar(nodes, nearest, nearest + 1, botID);
+    }
+
+    public AStarGraph(GraphNode[] nodes, float[] start, float[] goal, int botID) {
+        int nearestStart = nearestNode(start, nodes);
+        int nearestGoal = nearestNode(goal, nodes);
+        aStar(nodes, nearestStart, nearestGoal, botID);
+    }
+
+
+    public AStarGraph(GraphNode[] nodes, int start, int goal, int botID) {
+        aStar(nodes, start, goal, botID);
+    }
+
+    private void aStar(GraphNode[] nodes, int start, int goal, int botID) {
         double t = System.currentTimeMillis();
         this.nodes = nodes;
         this.start = start;
         this.goal = goal;
+        this.botID = botID;
+        finished = false;
 
         // initializing
         initialize();
@@ -36,6 +93,9 @@ public class AStarGraph {
 
             // if the current node is the goal, the algorithm is done
             if(u == goal) {
+                System.out.println("Found goal for " + botID + " in " + (System.currentTimeMillis() - t));
+                // finally reconstruct the path
+                reconstructPath();
                 return;
             }
             // add it to the closed list
@@ -43,11 +103,40 @@ public class AStarGraph {
 
             // Go through each node
             expandNode(u);
-            System.out.println(open.size());
         }
 
-        System.out.println("Conversion took " + (System.currentTimeMillis() - t));
+        System.out.println("Conversion took " + (System.currentTimeMillis() - t) +  ". No goal found.");
         debug();
+    }
+
+    private void reconstructPath() {
+        route = new LinkedList<>();
+        GraphNode current = nodes[goal];
+        // go through hashmap
+        while(cameFrom.containsKey(current)) {
+            current = cameFrom.get(current);
+            route.add(current);
+        }
+        debugPath(route);
+        finished = true;
+    }
+
+    private void debugPath(LinkedList<GraphNode> path) {
+        try {
+            FileWriter f = new FileWriter("./path.txt");
+            GraphNode last = null;
+            for(GraphNode cur:path) {
+                f.write(cur.x + " " + cur.y + " " + cur.z + " " + cur.blocked + "\n");
+            }
+            f.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private double len(GraphNode a) {
+        return FastMath.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
     }
 
     private void expandNode(int u) {
@@ -58,25 +147,27 @@ public class AStarGraph {
 
             // Stop if the neighbour is already discovered and proceed with next one
             if(closed.contains(child)) {
-                break;
+                continue;
             }
 
             // calc g using distance
-            double tent_g = gScore[u] + distanceBetween(child, u);
+            double tent_g = gScore[u] + exactDistanceBetween(child, u);
 
             // stop if it is contained in the list and score is higher
             if(open.contains(child)) {
                 if(tent_g >= gScore[child]) {
-                    break;
+                    continue;
                 }
             }
 
-            previous[child] = nodes[u];
+            //previous[child] = nodes[u];
+            cameFrom.put(nodes[child], nodes[u]);
+
             gScore[child] = tent_g;
 
 
             // calc h (child to end node heuristic)
-            hScore[child] = distanceBetween(child, goal);
+            hScore[child] = exactDistanceBetween(child, goal);
 
             // set the f distance
             double f = tent_g + hScore[child];
@@ -94,34 +185,34 @@ public class AStarGraph {
 
     private void debug() {
         //
-        for(double i: fScore) {
+        /*for(double i: fScore) {
             if(i!=0) {
                 System.out.println(i);
             }
-        }
+        }*/
+        // Go through all array
+
     }
 
-    private void distanceUpdate(int u, int v) {
-        double alt = gScore[u] + distanceBetween(u, v);
-        if(alt < gScore[v]) {
-            gScore[v] = alt;
-            previous[v] = nodes[u];
-
-            open.remove(v);
-            open.add(v);
-        }
-    }
-
-    // TODO: Calculate with radius
     private double distanceBetween(int a, int b) {
-        GraphNode gA = nodes[a];
-        GraphNode gB = nodes[b];
+        GraphNode A = nodes[a];
+        GraphNode B = nodes[b];
         // TODO: efficency?
-        return FastMath.sqrt(FastMath.pow(gA.x + gB.x, 2) + FastMath.pow(gA.y + gB.y, 2) + FastMath.pow(gA.z + gB.z, 2));
+        return FastMath.sqrt(FastMath.pow(B.x - A.x, 2) + FastMath.pow(B.y - A.y, 2) + FastMath.pow(B.z - A.z, 2));
+    }
+
+    private double exactDistanceBetween(int a, int b) {
+        GraphNode A = nodes[a];
+        GraphNode B = nodes[b];
+        if(B.blocked || A.blocked) {
+            return Double.POSITIVE_INFINITY;
+        }
+        // Distance is 1, so formula is easy.
+        return FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
     }
 
     private int nodeToID(GraphNode node) {
-        return graphNodeIntegerHashMap.get(node);
+        return graphNodeIntegerHashMap.get(node.hashCode());
     }
 
 
@@ -132,27 +223,34 @@ public class AStarGraph {
         gScore = new double[nodes.length];
         fScore = new double[nodes.length];
         hScore = new double[nodes.length];
-        previous = new GraphNode[nodes.length];
+        // Map for getting an id by the object
         graphNodeIntegerHashMap = new HashMap<>();
+        // Map for neighbours
+        cameFrom = new HashMap<>();
         closed = new HashSet<>();
 
         // Priority Queue that is sorted by its smallest f-Score
-        open = new PriorityQueue<Integer>((o1, o2) -> (int)FastMath.signum(fScore[o1] - fScore[o2]));
+        open = new PriorityQueue<>((o1, o2) -> (int) FastMath.signum(fScore[o1] - fScore[o2]));
 
         // Go through all nodes and set gScore to infinity and previous to null
         for(int i = 0; i < nodes.length; i++) {
-            previous[i] = null;
             gScore[i] = Double.POSITIVE_INFINITY;
+            fScore[i] = Double.POSITIVE_INFINITY;
             // Build the hashmap (for neighbouring)
-            graphNodeIntegerHashMap.put(nodes[i], i);
+            graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
         }
 
-        // Set f-Score to start to zero and putting in array again
-        fScore[start] = 0;
+        // cost from start to start is zero.
+        gScore[start] = 0;
+        // estimate the f score (min distance)
+        fScore[start] = exactDistanceBetween(start, goal);
 
         // Only add "start" at the beginning
         open.add(start);
     }
 
 
+    public boolean isFinished() {
+        return finished;
+    }
 }
