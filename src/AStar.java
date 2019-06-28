@@ -20,7 +20,6 @@ public class AStar {
 
     private LinkedList<GraphNode> route;
 
-    private Queue<GraphNode> way;
 
     private GraphNode[] nodes;
     private int start;
@@ -80,7 +79,12 @@ public class AStar {
         this.botID = botID;
         finished = false;
 
-        // initializing
+        if(nodes[start].blocked || nodes[goal].blocked) {
+            System.out.println("Start or end is blocked.");
+            return;
+        }
+
+        // initializing the algorithm
         initialize();
 
         // Go through open while it is not empty
@@ -115,8 +119,12 @@ public class AStar {
             current = cameFrom.get(current);
             route.add(current);
         }
-        debugPath(route);
+        //debugPath(route);
         finished = true;
+    }
+
+    private boolean energyPoint(GraphNode g) {
+        return g.x > .94f || g.y > .94f || g.z > .94f;
     }
 
     private void debugPath(LinkedList<GraphNode> path) {
@@ -145,6 +153,9 @@ public class AStar {
 
             // Stop if the neighbour is already discovered and proceed with next one
             if(closed.contains(child))
+                continue;
+
+            if(c.blocked && botID != 1)
                 continue;
 
             // calc g using distance
@@ -191,11 +202,18 @@ public class AStar {
     }
 
     private float exactDistanceBetween(int a, int b) {
-        //return(distanceBetween(a,b));
+        float score = 0;
         GraphNode A = nodes[a];
         GraphNode B = nodes[b];
-        // Distance is 1, so formula is easy.
-        return (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
+        // Distance is 1, so formula can be improved.
+        score = (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
+        if(energyPoint(B)) {
+            score *= .5f;
+        }
+        if(B.owner != botID) {
+
+        }
+        return score;
     }
 
     private int nodeToID(GraphNode node) {
@@ -244,5 +262,9 @@ public class AStar {
 
     public boolean isFinished() {
         return finished;
+    }
+
+    public boolean isEmpty() {
+        return route.isEmpty();
     }
 }

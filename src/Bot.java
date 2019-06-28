@@ -8,11 +8,9 @@ public class Bot implements Runnable {
     private int botID;
     public volatile boolean running;
     private int playerID;
-    private Dijkstra dijkstra;
     private AStar aStar;
-    private float angle;
     private GraphNode goal;
-    final float TOLERANCE = .02f;
+    private final float TOLERANCE = .04f;
 
     public Bot(NetworkClient client, int botID) {
         this.botID = botID;
@@ -23,7 +21,7 @@ public class Bot implements Runnable {
         //Dijkstra dijkstra = new Dijkstra(map, posToHash(), botID);
         float[] pos = client.getBotPosition(playerID, botID);
         GraphNode[] g = client.getGraph();
-        aStar = new AStar(g, 0, 100, botID);
+        aStar = new AStar(g, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID);
         //AStar.getShortestPath(g, g[0], g[100]);
     }
 
@@ -34,10 +32,10 @@ public class Bot implements Runnable {
 
     private void think() {
         if(aStar.isFinished()) {
-            if(goal == null) {
+            if(goal == null && !aStar.isEmpty()) {
                 goal = aStar.getNext();
             } else {
-                if(isInPoint(goal)) {
+                if(isInPoint(goal) && !aStar.isEmpty()) {
                     goal = aStar.getNext();
                     System.out.println("Remaining: " + aStar.routeLength() + " speed: " + client.getBotSpeed(botID));
                 }
@@ -112,7 +110,7 @@ public class Bot implements Runnable {
                 synchronized (Main.sync) {
                     // move to the right direction
                     think();
-                    Thread.sleep(5);
+                    //Thread.sleep(6);
                     // Stop, if not running anymore
 
                     if(!client.isAlive()) {
