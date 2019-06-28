@@ -23,7 +23,9 @@ public class Bot implements Runnable {
         // Implementing dijkstra
         //Dijkstra dijkstra = new Dijkstra(map, posToHash(), botID);
         float[] pos = client.getBotPosition(playerID, botID);
-        aStar = new AStarGraph(client.getGraph(), pos, new float[]{0,1,0}, botID);
+        GraphNode[] g = client.getGraph();
+        aStar = new AStarGraph(g, 0, 100, botID);
+        //AStar.getShortestPath(g, g[0], g[100]);
     }
 
     private boolean collectsEnergy() {

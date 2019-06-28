@@ -15,9 +15,8 @@ public class AStarGraph {
 
     private boolean finished;
 
-    private double[] gScore;
-    private double[] fScore;
-    private double[] hScore;
+    private float[] gScore;
+    private float[] fScore;
 
     private LinkedList<GraphNode> route;
 
@@ -40,12 +39,11 @@ public class AStarGraph {
 
 
     private int nearestNode(float[] pos, GraphNode[] nodes) {
-        double score = Double.POSITIVE_INFINITY;
+        float score = Float.MAX_VALUE;
         int near = -1;
         for(int i = 0; i < nodes.length; i++) {
-            double dist = distanceFloatGraph(pos, nodes[i]);
+            float dist = distanceFloatGraph(pos, nodes[i]);
             if(dist < score) {
-                System.out.println(dist);
                 score = dist;
                 near = i;
             }
@@ -54,8 +52,8 @@ public class AStarGraph {
         return near;
     }
 
-    private double distanceFloatGraph(float[] a, GraphNode b) {
-        return FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
+    private float distanceFloatGraph(float[] a, GraphNode b) {
+        return (float)FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
     }
 
     public AStarGraph(GraphNode[] nodes, float[] start, int goal, int botID) {
@@ -146,35 +144,26 @@ public class AStarGraph {
             int child = nodeToID(c);
 
             // Stop if the neighbour is already discovered and proceed with next one
-            if(closed.contains(child)) {
+            if(closed.contains(child))
                 continue;
-            }
 
             // calc g using distance
-            double tent_g = gScore[u] + exactDistanceBetween(child, u);
+            float tent_g = gScore[u] + exactDistanceBetween(u, child);
 
             // stop if it is contained in the list and score is higher
-            if(open.contains(child)) {
-                if(tent_g >= gScore[child]) {
-                    continue;
-                }
-            }
+            if(!open.contains(child))
+                open.add(child);
+            else if(tent_g >= gScore[child])
+                continue;
 
             //previous[child] = nodes[u];
             cameFrom.put(nodes[child], nodes[u]);
 
             gScore[child] = tent_g;
 
-
-            // calc h (child to end node heuristic)
-            hScore[child] = exactDistanceBetween(child, goal);
-
-            // set the f distance
-            double f = tent_g + hScore[child];
+            fScore[child] = gScore[child] + exactDistanceBetween(child, goal);
 
             if(open.contains(child)) {
-                // update score
-                fScore[child] = f;
                 open.remove(child);
                 open.add(child);
             } else {
@@ -194,21 +183,19 @@ public class AStarGraph {
 
     }
 
-    private double distanceBetween(int a, int b) {
+    private float distanceBetween(int a, int b) {
         GraphNode A = nodes[a];
         GraphNode B = nodes[b];
         // TODO: efficency?
-        return FastMath.sqrt(FastMath.pow(B.x - A.x, 2) + FastMath.pow(B.y - A.y, 2) + FastMath.pow(B.z - A.z, 2));
+        return (float)FastMath.sqrt(FastMath.pow(B.x - A.x, 2) + FastMath.pow(B.y - A.y, 2) + FastMath.pow(B.z - A.z, 2));
     }
 
-    private double exactDistanceBetween(int a, int b) {
+    private float exactDistanceBetween(int a, int b) {
+        //return(distanceBetween(a,b));
         GraphNode A = nodes[a];
         GraphNode B = nodes[b];
-        if(B.blocked || A.blocked) {
-            return Double.POSITIVE_INFINITY;
-        }
         // Distance is 1, so formula is easy.
-        return FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
+        return (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
     }
 
     private int nodeToID(GraphNode node) {
@@ -220,22 +207,27 @@ public class AStarGraph {
     private void initialize() {
         // Initialize the gScore and previous
         // VARIABLES
-        gScore = new double[nodes.length];
-        fScore = new double[nodes.length];
-        hScore = new double[nodes.length];
+        gScore = new float[nodes.length];
+        fScore = new float[nodes.length];
+
         // Map for getting an id by the object
         graphNodeIntegerHashMap = new HashMap<>();
+
         // Map for neighbours
         cameFrom = new HashMap<>();
         closed = new HashSet<>();
 
         // Priority Queue that is sorted by its smallest f-Score
-        open = new PriorityQueue<>((o1, o2) -> (int) FastMath.signum(fScore[o1] - fScore[o2]));
+        open = new PriorityQueue<>((o1, o2) -> {
+            float d1 = fScore[o1];
+            float d2 = fScore[o2];
+            return Float.compare(d1, d2);
+        });
 
         // Go through all nodes and set gScore to infinity and previous to null
         for(int i = 0; i < nodes.length; i++) {
-            gScore[i] = Double.POSITIVE_INFINITY;
-            fScore[i] = Double.POSITIVE_INFINITY;
+            gScore[i] = Float.POSITIVE_INFINITY;
+            fScore[i] = Float.POSITIVE_INFINITY;
             // Build the hashmap (for neighbouring)
             graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
         }
