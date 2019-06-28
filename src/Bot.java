@@ -2,7 +2,6 @@ import lenz.htw.cywwtaip.net.NetworkClient;
 import lenz.htw.cywwtaip.world.GraphNode;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-import java.util.Map;
 
 public class Bot implements Runnable {
     private NetworkClient client;
@@ -10,7 +9,7 @@ public class Bot implements Runnable {
     public volatile boolean running;
     private int playerID;
     private Dijkstra dijkstra;
-    private AStarGraph aStar;
+    private AStar aStar;
     private float angle;
     private GraphNode goal;
     final float TOLERANCE = .02f;
@@ -24,7 +23,7 @@ public class Bot implements Runnable {
         //Dijkstra dijkstra = new Dijkstra(map, posToHash(), botID);
         float[] pos = client.getBotPosition(playerID, botID);
         GraphNode[] g = client.getGraph();
-        aStar = new AStarGraph(g, 0, 100, botID);
+        aStar = new AStar(g, 0, 100, botID);
         //AStar.getShortestPath(g, g[0], g[100]);
     }
 

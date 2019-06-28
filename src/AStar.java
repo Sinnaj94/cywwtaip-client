@@ -6,7 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-public class AStarGraph {
+public class AStar {
     private PriorityQueue<Integer> open;
     private Set<Integer> closed;
     private HashMap<Integer, Integer> graphNodeIntegerHashMap;
@@ -56,19 +56,19 @@ public class AStarGraph {
         return (float)FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
     }
 
-    public AStarGraph(GraphNode[] nodes, float[] start, int goal, int botID) {
+    public AStar(GraphNode[] nodes, float[] start, int goal, int botID) {
         int nearest = nearestNode(start, nodes);
         aStar(nodes, nearest, nearest + 1, botID);
     }
 
-    public AStarGraph(GraphNode[] nodes, float[] start, float[] goal, int botID) {
+    public AStar(GraphNode[] nodes, float[] start, float[] goal, int botID) {
         int nearestStart = nearestNode(start, nodes);
         int nearestGoal = nearestNode(goal, nodes);
         aStar(nodes, nearestStart, nearestGoal, botID);
     }
 
 
-    public AStarGraph(GraphNode[] nodes, int start, int goal, int botID) {
+    public AStar(GraphNode[] nodes, int start, int goal, int botID) {
         aStar(nodes, start, goal, botID);
     }
 
