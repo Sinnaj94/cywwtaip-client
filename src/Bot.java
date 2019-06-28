@@ -9,6 +9,7 @@ public class Bot implements Runnable {
     public volatile boolean running;
     private int playerID;
     private AStar aStar;
+    private Clustering clustering;
     private GraphNode goal;
     private final float TOLERANCE = .04f;
 
@@ -22,6 +23,7 @@ public class Bot implements Runnable {
         float[] pos = client.getBotPosition(playerID, botID);
         GraphNode[] g = client.getGraph();
         aStar = new AStar(g, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID);
+        clustering = new Clustering(g);
         //AStar.getShortestPath(g, g[0], g[100]);
     }
 

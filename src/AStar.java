@@ -201,18 +201,19 @@ public class AStar {
         return (float)FastMath.sqrt(FastMath.pow(B.x - A.x, 2) + FastMath.pow(B.y - A.y, 2) + FastMath.pow(B.z - A.z, 2));
     }
 
+    // TODO: put energy point usw in it
     private float exactDistanceBetween(int a, int b) {
         float score = 0;
         GraphNode A = nodes[a];
         GraphNode B = nodes[b];
         // Distance is 1, so formula can be improved.
         score = (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
-        if(energyPoint(B)) {
+        /*if(energyPoint(B)) {
             score *= .5f;
         }
         if(B.owner != botID) {
 
-        }
+        }*/
         return score;
     }
 
