@@ -3,14 +3,14 @@ import org.apache.commons.math3.util.FastMath;
 
 import java.util.*;
 
-public class Clustering {
+public class KMeans {
     private final int NUM_CLUSTERS = 256;
     private Cluster[] clusters;
     private GraphNode[] nodes;
     Random r;
 
 
-    public Clustering(GraphNode[] nodes) {
+    public KMeans(GraphNode[] nodes) {
         // random class
         this.nodes = nodes;
         r = new Random(System.currentTimeMillis());
