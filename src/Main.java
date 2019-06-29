@@ -21,7 +21,7 @@ public class Main {
          */
 
         // Create the bots
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < 3; i++) {
             // Building three different converted maps
             Bot c = new Bot(client, i);
             new Thread(c).start();
