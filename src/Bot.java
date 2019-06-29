@@ -3,15 +3,23 @@ import lenz.htw.cywwtaip.world.GraphNode;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 
+import java.util.Arrays;
+
 public class Bot implements Runnable {
     private NetworkClient client;
+
+    public int getBotID() {
+        return botID;
+    }
+
     private int botID;
     public volatile boolean running;
     private int playerID;
     private AStar aStar;
+    private GraphNode[] nodes;
     private KMeans KMeans;
     private GraphNode goal;
-    private final float TOLERANCE = .04f;
+    private final float TOLERANCE = .05f;
 
     public Bot(NetworkClient client, int botID) {
         this.botID = botID;
@@ -21,10 +29,11 @@ public class Bot implements Runnable {
         // Implementing dijkstra
         //Dijkstra dijkstra = new Dijkstra(map, posToHash(), botID);
         float[] pos = client.getBotPosition(playerID, botID);
-        GraphNode[] g = client.getGraph();
-        aStar = new AStar(g, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID);
-        //KMeans = new KMeans(g);
+        nodes = client.getGraph();
+        // Go to energy fields first and recharge
+        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID);
         //AStar.getShortestPath(g, g[0], g[100]);
+        // Thread for updating the most interesting region
     }
 
     private boolean collectsEnergy() {
@@ -39,12 +48,12 @@ public class Bot implements Runnable {
             } else {
                 if(isInPoint(goal) && !aStar.isEmpty()) {
                     goal = aStar.getNext();
-                    System.out.println("Remaining: " + aStar.routeLength() + " speed: " + client.getBotSpeed(botID));
+                    //System.out.println("Remaining: " + aStar.routeLength() + " speed: " + client.getBotSpeed(botID));
                 }
             }
             float dir = navigateTo(goal);
             if(!Float.isNaN(dir)) {
-                client.changeMoveDirection(botID, navigateTo(goal));
+                client.changeMoveDirection(botID, dir);
             }
         }
     }
@@ -105,14 +114,25 @@ public class Bot implements Runnable {
         return (float)getPosition().distance(getGoal());
     }
 
+    public void setGoal(float[] goal) {
+        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID);
+    }
+
+    public void setGoal(int goal) {
+        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID);
+    }
+
     @Override
     public void run() {
         try {
             while(true) {
                 synchronized (Main.sync) {
                     // move to the right direction
-                    think();
-                    //Thread.sleep(6);
+                    if(client.isGameRunning()) {
+                        think();
+                    } else {
+                        Thread.sleep(50);
+                    }
                     // Stop, if not running anymore
 
                     if(!client.isAlive()) {

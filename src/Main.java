@@ -19,11 +19,15 @@ public class Main {
         Können nicht gebremst werden!
         if(x, y, oder z > .94) -> Energie wird geladen
          */
+        // Create k-Means algorithm (it is only needed once)
+        InterestingPoint p = new InterestingPoint(client, client.getMyPlayerNumber());
+        new Thread(p).start();
 
         // Create the bots
         for(int i = 0; i < 3; i++) {
             // Building three different converted maps
             Bot c = new Bot(client, i);
+            p.registerBot(c);
             new Thread(c).start();
         }
 

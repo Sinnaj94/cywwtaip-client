@@ -47,7 +47,7 @@ public class AStar {
                 near = i;
             }
         }
-        System.out.println("nearest node is " + near + " with distance " + score);
+        //System.out.println("nearest node is " + near + " with distance " + score);
         return near;
     }
 
@@ -55,19 +55,29 @@ public class AStar {
         return (float)FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
     }
 
-    public AStar(GraphNode[] nodes, float[] start, int goal, int botID) {
-        int nearest = nearestNode(start, nodes);
-        aStar(nodes, nearest, nearest + 1, botID);
-    }
-
     public AStar(GraphNode[] nodes, float[] start, float[] goal, int botID) {
         int nearestStart = nearestNode(start, nodes);
         int nearestGoal = nearestNode(goal, nodes);
+        buildHashMap(nodes);
         aStar(nodes, nearestStart, nearestGoal, botID);
+    }
+
+    public AStar(GraphNode[] nodes, float[] start, int goal, int botID) {
+        int nearestStart = nearestNode(start, nodes);
+        buildHashMap(nodes);
+        aStar(nodes, nearestStart, goal, botID);
+    }
+
+    private void buildHashMap(GraphNode[] nodes) {
+        graphNodeIntegerHashMap = new HashMap<>();
+        for(int i = 0; i < nodes.length; i++) {
+            graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
+        }
     }
 
 
     public AStar(GraphNode[] nodes, int start, int goal, int botID) {
+        buildHashMap(nodes);
         aStar(nodes, start, goal, botID);
     }
 
@@ -79,9 +89,20 @@ public class AStar {
         this.botID = botID;
         finished = false;
 
-        if(nodes[start].blocked || nodes[goal].blocked) {
-            System.out.println("Start or end is blocked.");
+        if(nodes[start].blocked) {
+            System.out.println("Start is blocked.");
             return;
+        }
+
+        if(nodes[goal].blocked) {
+            System.out.println("Start or end is blocked. Choosing neighbour.");
+            for(int i = 0; i < nodes[goal].neighbors.length; i++) {
+                // Look for not blocked neighbours
+                if(!nodes[goal].neighbors[i].blocked) {
+                    goal = graphNodeIntegerHashMap.get(nodes[goal].neighbors[i].hashCode());
+                    break;
+                }
+            }
         }
 
         // initializing the algorithm
@@ -95,7 +116,7 @@ public class AStar {
 
             // if the current node is the goal, the algorithm is done
             if(u == goal) {
-                System.out.println("Found goal for " + botID + " in " + (System.currentTimeMillis() - t));
+                //System.out.println("Found goal for " + botID + " in " + (System.currentTimeMillis() - t));
                 // finally reconstruct the path
                 reconstructPath();
                 return;
@@ -194,13 +215,6 @@ public class AStar {
 
     }
 
-    private float distanceBetween(int a, int b) {
-        GraphNode A = nodes[a];
-        GraphNode B = nodes[b];
-        // TODO: efficency?
-        return (float)FastMath.sqrt(FastMath.pow(B.x - A.x, 2) + FastMath.pow(B.y - A.y, 2) + FastMath.pow(B.z - A.z, 2));
-    }
-
     // TODO: put energy point usw in it
     private float exactDistanceBetween(int a, int b) {
         float score = 0;
@@ -217,6 +231,7 @@ public class AStar {
         return score;
     }
 
+    // TODO: Is it possible to use the object?
     private int nodeToID(GraphNode node) {
         return graphNodeIntegerHashMap.get(node.hashCode());
     }
@@ -229,8 +244,6 @@ public class AStar {
         gScore = new float[nodes.length];
         fScore = new float[nodes.length];
 
-        // Map for getting an id by the object
-        graphNodeIntegerHashMap = new HashMap<>();
 
         // Map for neighbours
         cameFrom = new HashMap<>();
@@ -247,8 +260,6 @@ public class AStar {
         for(int i = 0; i < nodes.length; i++) {
             gScore[i] = Float.POSITIVE_INFINITY;
             fScore[i] = Float.POSITIVE_INFINITY;
-            // Build the hashmap (for neighbouring)
-            graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
         }
 
         // cost from start to start is zero.
