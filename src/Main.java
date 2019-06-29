@@ -6,10 +6,17 @@ import java.util.*;
 
 public class Main {
     public final static  Object sync = new Object();
+    public static HashMap<Integer, Integer> graphNodeIntegerHashMap;
     public static void main(String[] args) {
         NetworkClient client = new NetworkClient(null, "Davidoff", "Davidoff cool water!");
         // Ziel des Spiels ist es, möglichst große Bereiche der Spielwelt durch "Überfahren" mit eigenen Bots mit der eigenen Farbe zu färben.
         // Die kugelförmige Spielwelt wird von Gräben durchzogen, die normalerweise die Bewegung begrenzen.
+
+        GraphNode[] nodes = client.getGraph();
+        graphNodeIntegerHashMap = new HashMap<>();
+        for(int i = 0; i < nodes.length; i++) {
+            graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
+        }
 
         /*
         Jeder Spieler hat Kontrolle über drei Bots (nummeriert 0, 1, 2).
@@ -30,6 +37,6 @@ public class Main {
             p.registerBot(c);
             new Thread(c).start();
         }
-
+        System.out.println(client.getScore(client.getMyPlayerNumber()));
     }
 }

@@ -31,7 +31,7 @@ public class Bot implements Runnable {
         float[] pos = client.getBotPosition(playerID, botID);
         nodes = client.getGraph();
         // Go to energy fields first and recharge
-        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID);
+        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID, client.getMyPlayerNumber());
         //AStar.getShortestPath(g, g[0], g[100]);
         // Thread for updating the most interesting region
     }
@@ -114,12 +114,8 @@ public class Bot implements Runnable {
         return (float)getPosition().distance(getGoal());
     }
 
-    public void setGoal(float[] goal) {
-        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID);
-    }
-
     public void setGoal(int goal) {
-        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID);
+        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID, client.getMyPlayerNumber());
     }
 
     @Override

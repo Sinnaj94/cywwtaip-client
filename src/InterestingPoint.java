@@ -35,11 +35,12 @@ public class InterestingPoint implements Runnable {
                 kMeans.setGraph(client.getGraph());
                 List<KMeans.Cluster> c = kMeans.refresh();
                 // Go through the 3 vip points
+                System.out.println("New goal. Go, go, go!");
                 for(Bot b:bots) {
                     b.setGoal(c.get(b.getBotID()).randomNode());
                 }
 
-                Thread.sleep(5000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -9,7 +9,7 @@ import java.util.*;
 public class AStar {
     private PriorityQueue<Integer> open;
     private Set<Integer> closed;
-    private HashMap<Integer, Integer> graphNodeIntegerHashMap;
+    private int playerID;
 
     private Map<GraphNode, GraphNode> cameFrom;
 
@@ -55,29 +55,22 @@ public class AStar {
         return (float)FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
     }
 
-    public AStar(GraphNode[] nodes, float[] start, float[] goal, int botID) {
+    public AStar(GraphNode[] nodes, float[] start, float[] goal, int botID, int playerID) {
         int nearestStart = nearestNode(start, nodes);
         int nearestGoal = nearestNode(goal, nodes);
-        buildHashMap(nodes);
+        this.playerID = playerID;
         aStar(nodes, nearestStart, nearestGoal, botID);
     }
 
-    public AStar(GraphNode[] nodes, float[] start, int goal, int botID) {
+    public AStar(GraphNode[] nodes, float[] start, int goal, int botID, int playerID) {
         int nearestStart = nearestNode(start, nodes);
-        buildHashMap(nodes);
+        this.playerID = playerID;
         aStar(nodes, nearestStart, goal, botID);
     }
 
-    private void buildHashMap(GraphNode[] nodes) {
-        graphNodeIntegerHashMap = new HashMap<>();
-        for(int i = 0; i < nodes.length; i++) {
-            graphNodeIntegerHashMap.put(nodes[i].hashCode(), i);
-        }
-    }
 
 
     public AStar(GraphNode[] nodes, int start, int goal, int botID) {
-        buildHashMap(nodes);
         aStar(nodes, start, goal, botID);
     }
 
@@ -99,7 +92,7 @@ public class AStar {
             for(int i = 0; i < nodes[goal].neighbors.length; i++) {
                 // Look for not blocked neighbours
                 if(!nodes[goal].neighbors[i].blocked) {
-                    goal = graphNodeIntegerHashMap.get(nodes[goal].neighbors[i].hashCode());
+                    goal = nodeToID(nodes[goal].neighbors[i]);
                     break;
                 }
             }
@@ -128,7 +121,6 @@ public class AStar {
             expandNode(u);
         }
 
-        System.out.println("Conversion took " + (System.currentTimeMillis() - t) +  ". No goal found.");
         debug();
     }
 
@@ -222,18 +214,21 @@ public class AStar {
         GraphNode B = nodes[b];
         // Distance is 1, so formula can be improved.
         score = (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
-        /*if(energyPoint(B)) {
-            score *= .5f;
+        if(B.owner != 0) {
+            if(B.owner != playerID + 1) {
+                // it is good, if it is other player
+                score *= .5;
+            } else if(B.owner == playerID + 1) {
+                // it is bad, if it is own player
+                score *= 2;
+            }
         }
-        if(B.owner != botID) {
-
-        }*/
         return score;
     }
 
     // TODO: Is it possible to use the object?
     private int nodeToID(GraphNode node) {
-        return graphNodeIntegerHashMap.get(node.hashCode());
+        return Main.graphNodeIntegerHashMap.get(node.hashCode());
     }
 
 
