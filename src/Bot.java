@@ -208,7 +208,7 @@ public class Bot implements Runnable {
                     think();
                     try {
                         // Barrier has 3 Values for 3 bots, so they are treated equally
-                        Main.barrier.await();
+                        ColdPawBot.barrier.await();
                     } catch (BrokenBarrierException e) {
                         e.printStackTrace();
                     }

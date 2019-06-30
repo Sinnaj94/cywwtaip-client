@@ -6,7 +6,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 
-public class Main {
+public class ColdPawBot {
     public static final CyclicBarrier barrier = new CyclicBarrier(3);
     public static HashMap<Integer, Integer> graphNodeIntegerHashMap;
     public static void main(String[] args) {

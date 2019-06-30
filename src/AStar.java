@@ -263,7 +263,7 @@ public class AStar {
      * @return Id of the array
      */
     private int nodeToID(GraphNode node) {
-        return Main.graphNodeIntegerHashMap.get(node.hashCode());
+        return ColdPawBot.graphNodeIntegerHashMap.get(node.hashCode());
     }
 
 
