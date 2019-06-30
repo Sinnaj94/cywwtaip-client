@@ -1,11 +1,13 @@
+import jdk.internal.cmm.SystemResourcePressureImpl;
 import lenz.htw.cywwtaip.net.NetworkClient;
 import lenz.htw.cywwtaip.world.GraphNode;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.*;
+import java.util.concurrent.CyclicBarrier;
 
 public class Main {
-    public final static  Object sync = new Object();
+    public static final CyclicBarrier barrier = new CyclicBarrier(3);
     public static HashMap<Integer, Integer> graphNodeIntegerHashMap;
     public static void main(String[] args) {
         NetworkClient client = new NetworkClient(null, "Davidoff", "Davidoff cool water!");
@@ -37,6 +39,5 @@ public class Main {
             p.registerBot(c);
             new Thread(c).start();
         }
-        System.out.println(client.getScore(client.getMyPlayerNumber()));
     }
 }

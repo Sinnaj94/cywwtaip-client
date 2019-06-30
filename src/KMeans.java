@@ -73,21 +73,10 @@ public class KMeans {
     }
 
     public List<Cluster> getInterestingPoint() {
-        /*Cluster current = null;
-        double max = Double.MIN_VALUE;
-        for(int i = 0; i < clusters.length; i++) {
-            if(clusters[i].getScore() > max) {
-                max = clusters[i].getScore();
-                current = clusters[i];
-            }
-        }
-        if(current != null)
-            System.out.println("Max cluster score: " + current.getScore() + " at point " + Arrays.toString(current.getPosition()));#*/
         List<Cluster> ret =  Arrays.asList(clusters);
         ret.sort(Comparator.comparingDouble(Cluster::getScore));
         Collections.reverse(ret);
         return ret;
-        //return current;
     }
 
     private float[] randomPosition() {

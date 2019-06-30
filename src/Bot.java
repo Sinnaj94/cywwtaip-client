@@ -4,6 +4,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
+import java.util.concurrent.BrokenBarrierException;
 
 public class Bot implements Runnable {
     private NetworkClient client;
@@ -19,7 +20,10 @@ public class Bot implements Runnable {
     private GraphNode[] nodes;
     private KMeans KMeans;
     private GraphNode goal;
-    private final float TOLERANCE = .05f;
+    private final float TOLERANCE = .02f;
+
+    private double lastRefill;
+    private final double NEWREFILL = 5000;
 
     public Bot(NetworkClient client, int botID) {
         this.botID = botID;
@@ -32,17 +36,32 @@ public class Bot implements Runnable {
         nodes = client.getGraph();
         // Go to energy fields first and recharge
         aStar = new AStar(nodes, client.getBotPosition(playerID, botID), new float[]{0,1,0}, botID, client.getMyPlayerNumber());
+        lastRefill = System.currentTimeMillis();
         //AStar.getShortestPath(g, g[0], g[100]);
         // Thread for updating the most interesting region
     }
 
     private boolean collectsEnergy() {
+        if(!client.isGameRunning()) {
+            return true;
+        }
         float[] pos = client.getBotPosition(botID, playerID);
-        return pos[0] > .94f || pos[1] > .94f || pos[2] > .94f;
+        return FastMath.abs(pos[0]) > .94f || FastMath.abs(pos[1]) > .94f || FastMath.abs(pos[2]) > .94f;
+    }
+
+    private void energyUpdate() {
+        if(collectsEnergy()) {
+            lastRefill = System.currentTimeMillis();
+        }
+    }
+
+    public double getLastRefill() {
+        return lastRefill;
     }
 
     private void think() {
-        if(aStar.isFinished()) {
+        energyUpdate();
+        if(aStar.isFinished() && aStar != null) {
             if(goal == null && !aStar.isEmpty()) {
                 goal = aStar.getNext();
             } else {
@@ -73,6 +92,10 @@ public class Bot implements Runnable {
 
     private Vector3D getDirection() {
         return convert(client.getBotDirection(botID));
+    }
+
+    public float[] getBotPosition() {
+        return client.getBotPosition(playerID, botID);
     }
 
     private float navigateTo(GraphNode g) {
@@ -115,25 +138,33 @@ public class Bot implements Runnable {
     }
 
     public void setGoal(int goal) {
-        aStar = new AStar(nodes, client.getBotPosition(playerID, botID), goal, botID, client.getMyPlayerNumber());
+        aStar = new AStar(client.getGraph(), client.getBotPosition(playerID, botID), goal, botID, client.getMyPlayerNumber());
+    }
+
+    public void setGoal(float[] goal) {
+        aStar = new AStar(client.getGraph(), client.getBotPosition(playerID, botID), goal, botID, client.getMyPlayerNumber());
     }
 
     @Override
     public void run() {
         try {
             while(true) {
-                synchronized (Main.sync) {
-                    // move to the right direction
-                    if(client.isGameRunning()) {
-                        think();
-                    } else {
-                        Thread.sleep(50);
+                // move to the right direction
+                if(client.isGameRunning()) {
+                    think();
+                    try {
+                        //Thread.sleep(2);
+                        Main.barrier.await();
+                    } catch (BrokenBarrierException e) {
+                        e.printStackTrace();
                     }
-                    // Stop, if not running anymore
+                } else {
+                    Thread.sleep(50);
+                }
+                // Stop, if not running anymore
 
-                    if(!client.isAlive()) {
-                        Thread.sleep(1000);
-                    }
+                if(!client.isAlive()) {
+                    Thread.sleep(1000);
                 }
 
             }

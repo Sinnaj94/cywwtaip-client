@@ -121,7 +121,6 @@ public class AStar {
             expandNode(u);
         }
 
-        debug();
     }
 
     private void reconstructPath() {
@@ -168,6 +167,7 @@ public class AStar {
             if(closed.contains(child))
                 continue;
 
+            // Stop if it is  blocked path anyways (except it is bot 1)
             if(c.blocked && botID != 1)
                 continue;
 
@@ -196,18 +196,13 @@ public class AStar {
         }
     }
 
-    private void debug() {
-        //
-        /*for(double i: fScore) {
-            if(i!=0) {
-                System.out.println(i);
-            }
-        }*/
-        // Go through all array
 
-    }
-
-    // TODO: put energy point usw in it
+    /**
+     * Distance between two points on a sphere. Also modifies it based on owner and blocked
+     * @param a Start
+     * @param b Goal
+     * @return Distance
+     */
     private float exactDistanceBetween(int a, int b) {
         float score = 0;
         GraphNode A = nodes[a];
@@ -219,7 +214,13 @@ public class AStar {
                 // it is good, if it is other player
                 score *= .5;
             } else if(B.owner == playerID + 1) {
-                // it is bad, if it is own player
+                // it is very bad, if it is own player
+                score *= 2;
+            }
+        }
+        // If the direct neighbours are blocked, the bot sometimes hangs, so try to avoid
+        for(int i = 0; i < B.neighbors.length; i++) {
+            if(B.neighbors[i].blocked) {
                 score *= 2;
             }
         }
