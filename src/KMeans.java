@@ -6,13 +6,12 @@ import sun.nio.ch.Net;
 import java.lang.reflect.Array;
 import java.util.*;
 
+/**
+ * Class for getting the most interesting areas
+ */
 public class KMeans {
-    public static void main(String[] args) {
-        NetworkClient client = new NetworkClient(null, "KMeans", "Test");
-        KMeans k = new KMeans(client.getGraph(), client.getMyPlayerNumber());
-    }
-
-    private final int NUM_CLUSTERS = 10;
+    // The number of clusters
+    private final int NUM_CLUSTERS = 32;
     private final int SEED = 0;
     private Cluster[] clusters;
     private GraphNode[] nodes;
@@ -20,6 +19,11 @@ public class KMeans {
     Random r;
 
 
+    /**
+     * KMeans constructor
+     * @param nodes The given Graph
+     * @param playerNR The player Number
+     */
     public KMeans(GraphNode[] nodes, int playerNR) {
         // random class
         double t = System.currentTimeMillis();
@@ -37,10 +41,18 @@ public class KMeans {
         }
     }
 
+    /**
+     * Update the graph
+     * @param graph The given Graph
+     */
     public void setGraph(GraphNode[] graph) {
         nodes = graph;
     }
 
+    /**
+     * Execute the kMeans algorithm
+     * @return The Clusters as a list
+     */
     public List<Cluster> refresh() {
         // Reset all cluster scores
         for(int i = 0; i < clusters.length; i++) {
@@ -72,6 +84,10 @@ public class KMeans {
         return getInterestingPoint();
     }
 
+    /**
+     * Get the points ordered descending by score
+     * @return the points ordered descending by score
+     */
     public List<Cluster> getInterestingPoint() {
         List<Cluster> ret =  Arrays.asList(clusters);
         ret.sort(Comparator.comparingDouble(Cluster::getScore));
@@ -79,6 +95,10 @@ public class KMeans {
         return ret;
     }
 
+    /**
+     * Get a random position on a sphere
+     * @return random position on a sphere
+     */
     private float[] randomPosition() {
         float u = r.nextFloat();
         float v = r.nextFloat();
@@ -90,13 +110,18 @@ public class KMeans {
         return new float[]{x,y,z};
     }
 
+    /**
+     * Class for a cluster
+     */
     class Cluster {
         private List<Integer> nodeIDList;
+        private float[] position;
+        private double score;
 
-        public float[] getPosition() {
-            return position;
-        }
-
+        /**
+         * Get a random node
+         * @return random node, that is not blocked
+         */
         public int randomNode() {
             GraphNode c;
             int i;
@@ -107,31 +132,39 @@ public class KMeans {
             return i;
         }
 
+        /**
+         * Reset the score
+         */
         public void resetScore() {
             score = 0;
         }
 
-        private float[] position;
-
+        /**
+         * Get the calculated score
+         * @return the calculated score
+         */
         public double getScore() {
             return score;
         }
 
-        private double score;
+        /**
+         * Constructor for cluster
+         * @param position initial position
+         */
         public Cluster(float[] position) {
             nodeIDList = new ArrayList<>();
             this.position = position;
         }
 
+        /**
+         * Add a graph node by index and update score
+         * @param i index of node
+         */
         public void addGraphNode(int i) {
             nodeIDList.add(i);
             // Scoring
-            // TODO: automated scoring
-            /*if(nodes[i].blocked) {
-                score -= .5f;
-            }*/
-            // We want to eliminate other players
             if(nodes[i].owner != 0) {
+                // We want to eliminate other players, but not ourself
                 if(nodes[i].owner != playerNR + 1) {
                     score+=1;
                 } else if(nodes[i].owner == playerNR + 1) {
@@ -140,17 +173,27 @@ public class KMeans {
             }
         }
 
-
+        /**
+         * Get the distance to other Node by index
+         * @param i node by index
+         * @return the distance to other Node by index
+         */
         public float dist(int i) {
             return CustomMath.fastDist(position, nodes[i]);
         }
 
-        public int capacity() {
-            return nodeIDList.size();
+        public void setPosition(float[] position) {
+            this.position = position;
         }
 
+        /**
+         * Update the median of the current point
+         * @return the median of the current point
+         */
         public float[] updateMedian() {
             double[] total = new double[3];
+
+            // go through each node and add the score
             for(int i:nodeIDList) {
                 total[0] += nodes[i].x;
                 total[1] += nodes[i].y;
@@ -160,9 +203,12 @@ public class KMeans {
             // median value
             float[] median = new float[3];
             for(int i = 0; i < total.length; i++) {
+                // median value is all values / the size
                 median[i] = (float)(total[i] / nodeIDList.size());
             }
-            this.position = median;
+
+            setPosition(median);
+
             return median;
         }
     }

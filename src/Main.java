@@ -10,7 +10,8 @@ public class Main {
     public static final CyclicBarrier barrier = new CyclicBarrier(3);
     public static HashMap<Integer, Integer> graphNodeIntegerHashMap;
     public static void main(String[] args) {
-        NetworkClient client = new NetworkClient(null, "Davidoff", "Davidoff cool water!");
+        NetworkClient client = new NetworkClient(null, "Die kalte Pfote", "Die kalte Pfote hat wieder zugeschlagen!");
+
         // Ziel des Spiels ist es, möglichst große Bereiche der Spielwelt durch "Überfahren" mit eigenen Bots mit der eigenen Farbe zu färben.
         // Die kugelförmige Spielwelt wird von Gräben durchzogen, die normalerweise die Bewegung begrenzen.
 
@@ -28,14 +29,16 @@ public class Main {
         Können nicht gebremst werden!
         if(x, y, oder z > .94) -> Energie wird geladen
          */
-        // Create k-Means algorithm (it is only needed once)
-        InterestingPoint p = new InterestingPoint(client, client.getMyPlayerNumber());
+
+        // Create interesting-point algorithm (it is only needed once, it is shared by multiple bots)
+        InterestingPoint p = new InterestingPoint(client);
         new Thread(p).start();
 
         // Create the bots
         for(int i = 0; i < 3; i++) {
             // Building three different converted maps
             Bot c = new Bot(client, i);
+            // Register the bot to interesting point
             p.registerBot(c);
             new Thread(c).start();
         }

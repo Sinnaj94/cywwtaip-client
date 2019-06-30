@@ -1,11 +1,13 @@
 import lenz.htw.cywwtaip.world.GraphNode;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * A Star class for pathfinding
+ */
 public class AStar {
     private PriorityQueue<Integer> open;
     private Set<Integer> closed;
@@ -27,34 +29,14 @@ public class AStar {
 
     private int botID;
 
-    public GraphNode getNext() {
-        return route.pollLast();
-    }
-
-    public int routeLength() {
-        return route.size();
-    }
-
-
-
-    private int nearestNode(float[] pos, GraphNode[] nodes) {
-        float score = Float.MAX_VALUE;
-        int near = -1;
-        for(int i = 0; i < nodes.length; i++) {
-            float dist = distanceFloatGraph(pos, nodes[i]);
-            if(dist < score) {
-                score = dist;
-                near = i;
-            }
-        }
-        //System.out.println("nearest node is " + near + " with distance " + score);
-        return near;
-    }
-
-    private float distanceFloatGraph(float[] a, GraphNode b) {
-        return (float)FastMath.sqrt(FastMath.pow(a[0] - b.x, 2) + FastMath.pow(a[1] - b.y, 2) + FastMath.pow(a[2] - b.z, 2));
-    }
-
+    /**
+     * AStar algorithm
+     * @param nodes The given Graph
+     * @param start Start as float array (x,y,z)
+     * @param goal Goal as float array (x,y,z)
+     * @param botID Given Bot ID
+     * @param playerID Given PlayerID
+     */
     public AStar(GraphNode[] nodes, float[] start, float[] goal, int botID, int playerID) {
         int nearestStart = nearestNode(start, nodes);
         int nearestGoal = nearestNode(goal, nodes);
@@ -62,18 +44,57 @@ public class AStar {
         aStar(nodes, nearestStart, nearestGoal, botID);
     }
 
+    /**
+     * AStar algorithm
+     * @param nodes The given Graph
+     * @param start Start as float array (x,y,z)
+     * @param goal Goal as index
+     * @param botID Given Bot ID
+     * @param playerID Given PlayerID
+     */
     public AStar(GraphNode[] nodes, float[] start, int goal, int botID, int playerID) {
         int nearestStart = nearestNode(start, nodes);
         this.playerID = playerID;
         aStar(nodes, nearestStart, goal, botID);
     }
 
-
-
-    public AStar(GraphNode[] nodes, int start, int goal, int botID) {
-        aStar(nodes, start, goal, botID);
+    /**
+     * Get the next Node of the calculated route
+     * @return Next node of calculated route
+     */
+    public GraphNode getNext() {
+        return route.pollLast();
     }
 
+    /**
+     * Calculate the nearest Node-Index of a position in a graph
+     * @param pos float[] with x,y,z
+     * @param nodes Graph with multiple nodes
+     * @return Nearest node-index
+     */
+    private int nearestNode(float[] pos, GraphNode[] nodes) {
+        float score = Float.MAX_VALUE;
+        int near = -1;
+        // Go through each node in the graph
+        for (int i = 0; i < nodes.length; i++) {
+            // Check, which distance is the smallest
+            float dist = CustomMath.dist(pos, nodes[i]);
+            if (dist < score) {
+                score = dist;
+                near = i;
+            }
+        }
+        return near;
+    }
+
+
+    /**
+     * A Star algorithm, that does the operations
+     * @param nodes Graph
+     * @param start Start node as id
+     * @param goal End node as id
+     * @param botID Given Bot id
+     */
     private void aStar(GraphNode[] nodes, int start, int goal, int botID) {
         double t = System.currentTimeMillis();
         this.nodes = nodes;
@@ -82,34 +103,34 @@ public class AStar {
         this.botID = botID;
         finished = false;
 
-        if(nodes[start].blocked) {
+        // Return, if the start is blocked
+        if (nodes[start].blocked) {
             System.out.println("Start is blocked.");
             return;
         }
 
-        if(nodes[goal].blocked) {
+        // Check if goal is blocked and chose neighbour that is not blocked
+        if (nodes[goal].blocked) {
             System.out.println("Start or end is blocked. Choosing neighbour.");
-            for(int i = 0; i < nodes[goal].neighbors.length; i++) {
+            for (int i = 0; i < nodes[goal].neighbors.length; i++) {
                 // Look for not blocked neighbours
-                if(!nodes[goal].neighbors[i].blocked) {
+                if (!nodes[goal].neighbors[i].blocked) {
                     goal = nodeToID(nodes[goal].neighbors[i]);
                     break;
                 }
             }
         }
 
-        // initializing the algorithm
+        // initialize
         initialize();
 
         // Go through open while it is not empty
-        int tries = 0;
-        while(!open.isEmpty()) {
-            // Getting object with min f
+        while (!open.isEmpty()) {
+            // Getting object with min f using .poll()
             int u = open.poll();
 
             // if the current node is the goal, the algorithm is done
-            if(u == goal) {
-                //System.out.println("Found goal for " + botID + " in " + (System.currentTimeMillis() - t));
+            if (u == goal) {
                 // finally reconstruct the path
                 reconstructPath();
                 return;
@@ -120,30 +141,37 @@ public class AStar {
             // Go through each node
             expandNode(u);
         }
-
+        // No node was found.
     }
 
+    /**
+     * Reconstruct the path via the cameFrom Map
+     */
     private void reconstructPath() {
+        // the route as linked list
         route = new LinkedList<>();
         GraphNode current = nodes[goal];
-        // go through hashmap
-        while(cameFrom.containsKey(current)) {
+
+        // go through hashmap and build the route
+        while (cameFrom.containsKey(current)) {
             current = cameFrom.get(current);
             route.add(current);
         }
-        //debugPath(route);
+
+        // set finished = true, so the bot knows the algorithm is done
         finished = true;
     }
 
-    private boolean energyPoint(GraphNode g) {
-        return g.x > .94f || g.y > .94f || g.z > .94f;
-    }
 
+    /**
+     * Method for debugging the path
+     * @param path given path as linkedlist
+     */
     private void debugPath(LinkedList<GraphNode> path) {
         try {
             FileWriter f = new FileWriter("./path.txt");
             GraphNode last = null;
-            for(GraphNode cur:path) {
+            for (GraphNode cur : path) {
                 f.write(cur.x + " " + cur.y + " " + cur.z + " " + cur.blocked + "\n");
             }
             f.close();
@@ -153,31 +181,31 @@ public class AStar {
         }
     }
 
-    private double len(GraphNode a) {
-        return FastMath.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-    }
-
+    /**
+     * Expand the node
+     * @param u Node id in graph
+     */
     private void expandNode(int u) {
         // Go through each child
-        for(GraphNode c:nodes[u].neighbors) {
+        for (GraphNode c : nodes[u].neighbors) {
             // conversion
             int child = nodeToID(c);
 
             // Stop if the neighbour is already discovered and proceed with next one
-            if(closed.contains(child))
+            if (closed.contains(child))
                 continue;
 
             // Stop if it is  blocked path anyways (except it is bot 1)
-            if(c.blocked && botID != 1)
+            if (c.blocked && botID != 1)
                 continue;
 
             // calc g using distance
             float tent_g = gScore[u] + exactDistanceBetween(u, child);
 
             // stop if it is contained in the list and score is higher
-            if(!open.contains(child))
+            if (!open.contains(child))
                 open.add(child);
-            else if(tent_g >= gScore[child])
+            else if (tent_g >= gScore[child])
                 continue;
 
             //previous[child] = nodes[u];
@@ -187,7 +215,7 @@ public class AStar {
 
             fScore[child] = gScore[child] + exactDistanceBetween(child, goal);
 
-            if(open.contains(child)) {
+            if (open.contains(child)) {
                 open.remove(child);
                 open.add(child);
             } else {
@@ -199,6 +227,7 @@ public class AStar {
 
     /**
      * Distance between two points on a sphere. Also modifies it based on owner and blocked
+     *
      * @param a Start
      * @param b Goal
      * @return Distance
@@ -208,44 +237,50 @@ public class AStar {
         GraphNode A = nodes[a];
         GraphNode B = nodes[b];
         // Distance is 1, so formula can be improved.
-        score = (float)FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
-        if(B.owner != 0) {
-            if(B.owner != playerID + 1) {
+        score = (float) FastMath.acos((A.x * B.x + A.y * B.y + A.z * B.z));
+        if (B.owner != 0) {
+            if (B.owner != playerID + 1) {
                 // it is good, if it is other player
                 score *= .5;
-            } else if(B.owner == playerID + 1) {
+            } else if (B.owner == playerID + 1) {
                 // it is very bad, if it is own player
                 score *= 2;
             }
         }
         // If the direct neighbours are blocked, the bot sometimes hangs, so try to avoid
-        for(int i = 0; i < B.neighbors.length; i++) {
-            if(B.neighbors[i].blocked) {
+        for (int i = 0; i < B.neighbors.length; i++) {
+            if (B.neighbors[i].blocked) {
                 score *= 2;
             }
         }
         return score;
     }
 
-    // TODO: Is it possible to use the object?
+    /**
+     * Convert a GraphNode to an id via hashcode
+     *
+     * @param node Node to be converted
+     * @return Id of the array
+     */
     private int nodeToID(GraphNode node) {
         return Main.graphNodeIntegerHashMap.get(node.hashCode());
     }
 
 
-
+    /**
+     * Initialize the A-Star variables
+     */
     private void initialize() {
         // Initialize the gScore and previous
         // VARIABLES
         gScore = new float[nodes.length];
         fScore = new float[nodes.length];
 
-
         // Map for neighbours
         cameFrom = new HashMap<>();
         closed = new HashSet<>();
 
-        // Priority Queue that is sorted by its smallest f-Score
+        // Priority Queue that is sorted by its smallest f-Score using custom comparator
         open = new PriorityQueue<>((o1, o2) -> {
             float d1 = fScore[o1];
             float d2 = fScore[o2];
@@ -253,7 +288,7 @@ public class AStar {
         });
 
         // Go through all nodes and set gScore to infinity and previous to null
-        for(int i = 0; i < nodes.length; i++) {
+        for (int i = 0; i < nodes.length; i++) {
             gScore[i] = Float.POSITIVE_INFINITY;
             fScore[i] = Float.POSITIVE_INFINITY;
         }
@@ -267,11 +302,16 @@ public class AStar {
         open.add(start);
     }
 
-
+    /**
+     * @return if algorithm is finished
+     */
     public boolean isFinished() {
         return finished;
     }
 
+    /**
+     * @return if route is empty
+     */
     public boolean isEmpty() {
         return route.isEmpty();
     }
